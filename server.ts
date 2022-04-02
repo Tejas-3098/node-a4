@@ -41,7 +41,7 @@ app.use(cors({
 
 const SECRET = 'process.env.SECRET';
 let sess = {
-    secret: EXPRESS_SESSION_SECRET,
+    secret: process.env.EXPRESS_SESSION_SECRET,
     saveUninitialized: true,
     resave: true,
     cookie: {
