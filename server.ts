@@ -22,36 +22,34 @@ import GroupController from "./controllers/GroupController";
 const cors = require("cors");
 const session = require("express-session");
 
-// build the connection string
-//const PROTOCOL = "mongodb+srv";
-//const DB_USERNAME = process.env.DB_USERNAME;
-//const DB_PASSWORD = process.env.DB_PASSWORD;
-//const HOST = "cluster0.mqkp3.mongodb.net";
-//const DB_NAME = "myFirstDatabase";
-//const DB_QUERY = "retryWrites=true&w=majority";
-// const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${DB_NAME}?${DB_QUERY}`;// connect to the database
-//const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${DB_NAME}?${DB_QUERY}`;// connect to the database
-mongoose.connect('mongodb+srv://tejas:<tejas1234>@cluster0.mqkp3.mongodb.net/myFirstDatabase?retryWrites=true&w=majority');
-
 const app = express();
 app.use(cors({
     credentials: true,
     origin: process.env.CORS_ORIGIN
 }));
+// build the connection string
+const PROTOCOL = "mongodb+srv";
+const DB_USERNAME = process.env.DB_USERNAME;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const HOST = "cluster0.mqkp3.mongodb.net";
+const DB_NAME = "myFirstDatabase";
+const DB_QUERY = "retryWrites=true&w=majority";
+// const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${DB_NAME}?${DB_QUERY}`;// connect to the database
+const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${DB_NAME}?${DB_QUERY}`;// connect to the database
+mongoose.connect(connectionString);
 
-const SECRET = 'process.env.SECRET';
 let sess = {
-    secret: SECRET,
+    secret: process.env.EXPRESS_SESSION_SECRET,
     saveUninitialized: true,
     resave: true,
     cookie: {
-        secure: false
+        sameSite: process.env.ENVIRONMENT === "PRODUCTION" ? 'none' : 'lax',
+        secure: process.env.ENVIRONMENT === "PRODUCTION",
     }
 }
 
 if (process.env.ENVIRONMENT === 'PRODUCTION') {
     app.set('trust proxy', 1) // trust first proxy
-    sess.cookie.secure = true // serve secure cookies
 }
 
 app.use(session(sess))

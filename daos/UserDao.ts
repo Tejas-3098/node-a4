@@ -50,7 +50,7 @@ export default class UserDao implements UserDaoI {
      * @returns Promise To be notified when user is retrieved from the database
      */
     findUserByUsername = async (username: string): Promise<any> =>
-        UserModel.findOne({username});
+        UserModel.findOne({username: username});
 
     /**
      * Inserts user instance into the database
