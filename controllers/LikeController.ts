@@ -39,6 +39,8 @@ export default class LikeController implements LikeControllerI {
             app.get("/api/users/:uid/likes", LikeController.likeController.findAllTuitsLikedByUser);
             app.get("/api/tuits/:tid/likes", LikeController.likeController.findAllUsersThatLikedTuit);
             app.put("/api/users/:uid/likes/:tid", LikeController.likeController.userTogglesTuitLikes);
+            app.put("/users/:uid/dislikes/:tid", LikeController.likeController.userTogglesTuitDislikes);
+            app.get("/users/:uid/dislikes", LikeController.likeController.findAllTuitsDislikedByUser);
         }
         return LikeController.likeController;
     }
@@ -78,7 +80,30 @@ export default class LikeController implements LikeControllerI {
             });
     }
 
+    /**
+     * Creates a new like instance
+     * @param {Request} req Represents request from client, including path parameter uid
+     * representing ID of user who likes and tid representing ID of tuit that is being liked
+     * @param {Response} res Represents response to client, including the
+     * body formatted as JSON containing the new like instance that was inserted in the
+     * database
+     */
+    userLikesTuit = (req: Request, res: Response) =>
+        LikeController.likeDao.userLikesTuit(req.params.uid, req.params.tid)
+            .then(likes => res.json(likes));
     
+    /**
+     * Removes a like instance from the database
+     * @param {Request} req Represents request from client, including path parameter uid
+     * representing ID of user who unlikes and tid representing ID of tuit that is being unliked
+     * @param {Response} res Represents response to client, including the
+     * body formatted as JSON containing the like instance that was removed from the
+     * database
+     */
+    userUnlikesTuit = (req: Request, res: Response) =>
+        LikeController.likeDao.userUnlikesTuit(req.params.uid, req.params.tid)
+            .then(status => res.send(status));
+
     /**
      * @param {Request} req Represents request from client, including the
      * path parameters uid and tid representing the user that is liking the tuit
@@ -112,5 +137,74 @@ export default class LikeController implements LikeControllerI {
         } catch (e) {
             res.sendStatus(404);
         }
+    }
+    /**
+     * Performs update operations on the statistics related to dislikes on tuits in the database when
+     * dislike button is clicked
+     * @param {Request} req Represents request from client, including the
+     * path parameters uid and tid representing the user that is liking the tuit
+     * and the tuit being liked
+     * @param {Response} res Represents response to client, including the
+     * body formatted as JSON containing the new likes that was inserted in the
+     * database
+     */
+    userTogglesTuitDislikes = async (req: Request, res: Response) => {
+        const tid = req.params.tid;
+
+        // @ts-ignore
+        let userId = req.params.uid === "me" && req.session['profile'] ?
+            // @ts-ignore
+            req.session['profile']._id : req.params.uid;
+
+        if (userId === "me") {
+            res.sendStatus(503);
+            return;
+        }
+        try {
+            const userAlreadyLikedTuit = await LikeController.likeDao.findUserLikesTuit(userId, tid);
+            const userAlreadyDislikedTuit = await LikeController.dislikeDao.findUserDislikesTuit(userId, tid);
+
+            const howManyLikedTuit = await LikeController.likeDao.countHowManyLikedTuit(tid);
+            const howManyDislikedTuit = await LikeController.dislikeDao.countHowManyDislikedTuit(tid);
+
+            let tuit = await LikeController.tuitDao.findTuitById(tid);
+            if (userAlreadyDislikedTuit) {
+                await LikeController.dislikeDao.userUndislikesTuit(userId, tid);
+                tuit.stats.dislikes = howManyDislikedTuit - 1;
+            } else {
+                await LikeController.dislikeDao.userDislikesTuit(userId, tid);
+                tuit.stats.dislikes = howManyDislikedTuit + 1;
+                if (userAlreadyLikedTuit) { // if user had liked tuit it needs to be unliked as
+                                            // the user is disliking the tuit now
+                    await LikeController.likeDao.userUnlikesTuit(userId, tid);
+                    tuit.stats.likes = howManyLikedTuit - 1;
+                }
+            };
+            await LikeController.tuitDao.updateLikes(tid, tuit.stats);
+            res.sendStatus(200);
+        } catch (e) {
+            res.sendStatus(404);
+        }
+    }
+    /**
+     * Retrieves all tuits disliked by a user from the database
+     * @param {Request} req Represents request from client, including the path
+     * parameter uid representing the user liked the tuits
+     * @param {Response} res Represents response to client, including the
+     * body formatted as JSON arrays containing the tuit objects that were liked
+     */
+    findAllTuitsDislikedByUser = (req: Request, res: Response) => {
+        const uid = req.params.uid;
+        // @ts-ignore
+        const profile = req.session['profile'];
+        const userId = uid === "me" && profile ?
+            profile._id : uid;
+
+        LikeController.dislikeDao.findAllTuitsDislikedByUser(userId)
+            .then(dislikes => {
+                const dislikesNonNullTuits = dislikes.filter(dislike => dislike.tuit);
+                const tuitsFromDislikes = dislikesNonNullTuits.map(dislike => dislike.tuit);
+                res.json(tuitsFromDislikes);
+            });
     }
 };
