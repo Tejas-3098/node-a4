@@ -3,6 +3,7 @@
  */
 import {Express, Request, Response} from "express";
 import LikeDao from "../daos/LikeDao";
+import DislikeDao from "../daos/DislikeDao";
 import LikeControllerI from "../interfaces/LikeControllerI";
 import TuitDao from "../daos/TuitDao";
 
@@ -17,9 +18,11 @@ import TuitDao from "../daos/TuitDao";
  *     <li>POST /api/users/:uid/likes/:tid to record that a user likes a tuit
  *     </li>
  *     <li>DELETE /api/users/:uid/unlikes/:tid to record that a user
- *     no londer likes a tuit</li>
+ *     no longer likes a tuit</li>
  * </ul>
  * @property {LikeDao} likeDao Singleton DAO implementing likes CRUD operations
+ * @property {TuitDao} likeDao Singleton DAO implementing tuit CRUD operations
+ * @property {DislikeDao} dislikeDao Singleton DAO implementing dislike CRUD operations
  * @property {LikeController} LikeController Singleton controller implementing
  * RESTful Web service API
  */
@@ -138,6 +141,7 @@ export default class LikeController implements LikeControllerI {
             res.sendStatus(404);
         }
     }
+    
     /**
      * Performs update operations on the statistics related to dislikes on tuits in the database when
      * dislike button is clicked
@@ -186,6 +190,7 @@ export default class LikeController implements LikeControllerI {
             res.sendStatus(404);
         }
     }
+    
     /**
      * Retrieves all tuits disliked by a user from the database
      * @param {Request} req Represents request from client, including the path
