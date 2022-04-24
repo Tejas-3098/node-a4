@@ -14,18 +14,18 @@ const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${
 mongoose.connect(connectionString);
 
 
-export const login = (u: string, p: string) =>
-  userDao.findUserByCredentials(u, p)
-    .then(user => {
-      if (user) {
-        return user;
-      } else {
-        throw "Unknown user"
-      }
-    })
-    .then(user => user)
-    .catch(e => e)
-
+export const login = (u: string, p: string) => {
+   try {
+    const user = await userDao.findUserByCredentials(u, p);
+    if (!user) {
+      throw "Unknown user";
+    }
+    return user;
+  } catch (e) {
+    return e;
+  }
+}
+  
 export const register = (u: string, p: string, e: string) =>
   userDao.findUserByUsername(u)
     .then(user => {
