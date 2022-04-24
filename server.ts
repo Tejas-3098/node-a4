@@ -5,6 +5,9 @@
  *     <li>users</li>
  *     <li>tuits</li>
  *     <li>likes</li>
+ *     <li>bookmarks</li>
+ *     <li>follows</li>
+ *     <li>messages</li>
  * </ul>
  * 
  * Connects to a remote MongoDB instance hosted on the Atlas cloud database
@@ -22,11 +25,9 @@ import GroupController from "./controllers/GroupController";
 const cors = require("cors");
 const session = require("express-session");
 
-const app = express();
-app.use(cors({
-    credentials: true,
-    origin: process.env.CORS_ORIGIN
-}));
+var cors = require('cors'); 
+const session = require("express-session");
+
 // build the connection string
 const PROTOCOL = "mongodb+srv";
 const DB_USERNAME = process.env.DB_USERNAME;
@@ -37,6 +38,14 @@ const DB_QUERY = "retryWrites=true&w=majority";
 // const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${DB_NAME}?${DB_QUERY}`;// connect to the database
 const connectionString = `${PROTOCOL}://${DB_USERNAME}:${DB_PASSWORD}@${HOST}/${DB_NAME}?${DB_QUERY}`;// connect to the database
 mongoose.connect(connectionString);
+
+const app = express();
+
+app.use(cors({
+    credentials: true,
+    origin: process.env.CORS_ORIGIN
+}));
+
 
 let sess = {
     secret: process.env.EXPRESS_SESSION_SECRET,
@@ -58,14 +67,15 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) =>
     res.send('Welcome!'));
 
-app.get('/add/:a/:b', (req: Request, res: Response) =>
-    res.send(req.params.a + req.params.b));
-
 // create RESTful Web service API
 const courseController = new CourseController(app);
 const userController = UserController.getInstance(app);
 const tuitController = TuitController.getInstance(app);
 const likesController = LikeController.getInstance(app);
+const followController = FollowController.getInstance(app);
+const bookmarkController = BookmarkController.getInstance(app);
+const messageController = MessageConroller.getInstance(app);
+
 SessionController(app);
 AuthenticationController(app);
 GroupController(app);
